@@ -1,36 +1,134 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Inventory Management System
+
+A comprehensive inventory management solution built with Next.js 14, TypeScript, and Tailwind CSS.
+
+## Features
+
+### ✅ Implemented
+- **Dashboard** - Overview with KPIs, recent activity, and metrics
+- **Inventory Management** - Product tracking, stock levels, batch management
+- **Sales Orders** - Customer order management and processing
+- **Purchase Orders** - Supplier order management and procurement
+- **Stock In** - Inventory receiving workflow with QR code scanning
+- **Shipping** - Shipping plans and delivery tracking
+- **Finance** - Accounts receivable, payables, and expense tracking
+- **Request Slips** - Internal request management and approvals
+- **Activity Log** - Complete system activity tracking
+- **User Management** - User profiles and role-based access
+- **Notifications** - Real-time notification center
+- **Theme Support** - Dark/light mode with system preference detection
+
+### 🎨 UI Components
+- Modern, responsive design with Tailwind CSS
+- shadcn/ui component library
+- Mobile-friendly navigation
+- Professional dashboard layout
+- Interactive data tables and forms
+
+### 🔧 Technical Stack
+- **Framework**: Next.js 14 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Components**: shadcn/ui + Radix UI
+- **Icons**: Lucide React
+- **Theme**: next-themes for dark/light mode
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
 
+### Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd inventory_template
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Run the development server:
+```bash
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+├── app/                    # Next.js App Router pages
+│   ├── layout.tsx         # Root layout with theme provider
+│   ├── page.tsx           # Dashboard page
+│   ├── inventory/         # Inventory management
+│   ├── sales/            # Sales orders
+│   ├── purchase-orders/  # Purchase orders
+│   ├── stock-in/         # Stock receiving
+│   ├── shipping/         # Shipping management
+│   ├── finance/          # Financial management
+│   ├── requests/         # Request slips
+│   └── activity/         # Activity log
+├── components/           # React components
+│   ├── ui/              # shadcn/ui components
+│   ├── main-layout.tsx  # Main application layout
+│   ├── dashboard.tsx    # Dashboard component
+│   ├── inventory.tsx    # Inventory management
+│   └── ...              # Other feature components
+├── lib/                 # Utility functions
+└── public/              # Static assets
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Available Pages
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Dashboard** (`/`) - Main overview and KPIs
+- **Inventory** (`/inventory`) - Product and stock management
+- **Sales Orders** (`/sales`) - Customer order processing
+- **Purchase Orders** (`/purchase-orders`) - Supplier order management
+- **Stock In** (`/stock-in`) - Inventory receiving workflow
+- **Shipping** (`/shipping`) - Shipping and delivery tracking
+- **Finance** (`/finance`) - Financial management
+- **Request Slips** (`/requests`) - Internal request system
+- **Activity Log** (`/activity`) - System activity tracking
 
-## Deploy on Vercel
+## Next Steps
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 🚀 To Make Production Ready
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Backend Integration**
+   - Add API routes for CRUD operations
+   - Implement database (PostgreSQL, MongoDB, etc.)
+   - Add authentication system (NextAuth.js, Auth0, etc.)
+
+2. **Data Management**
+   - Add state management (Zustand, Redux Toolkit)
+   - Implement data validation (Zod, Yup)
+   - Add error handling and loading states
+
+3. **Advanced Features**
+   - Real-time updates with WebSockets
+   - File upload for product images
+   - Export functionality (PDF, Excel)
+   - Advanced reporting and analytics
+
+4. **Deployment**
+   - Environment configuration
+   - Database setup
+   - CI/CD pipeline
+   - Monitoring and logging
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.
