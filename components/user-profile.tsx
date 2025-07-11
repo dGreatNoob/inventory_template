@@ -12,8 +12,10 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { User, Settings, LogOut, Shield } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export function UserProfile() {
+  const router = useRouter();
   const user = {
     name: "John Doe",
     email: "john.doe@company.com",
@@ -47,6 +49,11 @@ export function UserProfile() {
         return <Badge variant="secondary">User</Badge>
     }
   }
+
+  const handleLogout = () => {
+    // TODO: Add real logout logic (clear session/cookie, call API)
+    router.push("/login");
+  };
 
   return (
     <DropdownMenu>
@@ -87,7 +94,7 @@ export function UserProfile() {
           <span>Permissions</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>

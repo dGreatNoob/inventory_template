@@ -2,15 +2,50 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
-// Test route to verify API routes are loading
-Route::get('/test', function () {
-    return response()->json(['message' => 'API is working']);
+// Public login route
+Route::post('/login', function (Request $request) {
+    $request->validate([
+        'email' => 'required|email',
+        'password' => 'required',
+    ]);
+
+    $user = User::where('email', $request->email)->first();
+
+    if (! $user || ! Hash::check($request->password, $user->password)) {
+        throw ValidationException::withMessages([
+            'email' => ['The provided credentials are incorrect.'],
+        ]);
+    }
+
+    $token = $user->createToken('spa-token')->plainTextToken;
+
+    return response()->json([
+        'access_token' => $token,
+        'token_type' => 'Bearer',
+        'user' => $user,
+    ]);
 });
 
+// Public registration route (optional)
+// Route::post('/register', ...);
+
+// Protected route to get current user
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+// Logout route
+Route::middleware('auth:sanctum')->post('/logout', function (Request $request) {
+    $request->user()->currentAccessToken()->delete();
+    return response()->json(['message' => 'Logged out']);
+});
+
+// Example: Protect other routes
+// Route::middleware('auth:sanctum')->get('/products', ...);
 
 // API Resource Routes
 Route::apiResource('products', App\Http\Controllers\Api\ProductController::class);
