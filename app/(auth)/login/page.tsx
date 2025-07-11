@@ -32,7 +32,7 @@ export default function LoginPage() {
         { withCredentials: true }
       );
       // Set the auth cookie with the access token
-      Cookies.set('auth', response.data.access_token, { expires: 7 });
+      Cookies.set('auth', response.data.access_token, { expires: 7, path: '/', sameSite: 'lax' });
       // Redirect to dashboard
       router.push("/");
     } catch (err: any) {
