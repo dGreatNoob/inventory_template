@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import api from "@/lib/api";
 
 const APP_NAME = "InventoryPro";
 
@@ -28,11 +29,21 @@ export default function RegisterPage() {
     }
     setLoading(true);
     try {
-      // TODO: Replace with real API call
+      await api.post("/register", {
+        name,
+        email,
+        password,
+        password_confirmation: confirmPassword,
+      });
       setSuccess("Registration successful! You can now log in.");
       setTimeout(() => router.push("/login"), 1500);
-    } catch (err) {
-      setError("Registration failed. Please try again.");
+    } catch (err: any) {
+      setError(
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        (err?.response?.data?.errors && Object.values(err.response.data.errors).flat().join(" ")) ||
+        "Registration failed. Please try again."
+      );
     } finally {
       setLoading(false);
     }

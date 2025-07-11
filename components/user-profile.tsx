@@ -13,6 +13,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { User, Settings, LogOut, Shield } from "lucide-react"
 import { useRouter } from "next/navigation"
+import api from "@/lib/api";
+import Cookies from "js-cookie";
 
 export function UserProfile() {
   const router = useRouter();
@@ -50,8 +52,13 @@ export function UserProfile() {
     }
   }
 
-  const handleLogout = () => {
-    // TODO: Add real logout logic (clear session/cookie, call API)
+  const handleLogout = async () => {
+    try {
+      await api.post("/logout", {}, { withCredentials: true });
+    } catch (err) {
+      // Optionally handle error
+    }
+    Cookies.remove('auth');
     router.push("/login");
   };
 

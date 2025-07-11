@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Moon, Sun } from "lucide-react";
 import api from "@/lib/api";
+import Cookies from 'js-cookie';
 
 const APP_NAME = "InventoryPro";
 
@@ -30,7 +31,8 @@ export default function LoginPage() {
         { email, password, remember },
         { withCredentials: true }
       );
-      // Optionally, set a cookie or use response data for session
+      // Set the auth cookie with the access token
+      Cookies.set('auth', response.data.access_token, { expires: 7 });
       // Redirect to dashboard
       router.push("/");
     } catch (err: any) {
@@ -39,6 +41,7 @@ export default function LoginPage() {
         err?.response?.data?.error ||
         "Login failed. Please try again."
       );
+      console.error("Login error:", err);
     } finally {
       setLoading(false);
     }
