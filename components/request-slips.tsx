@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react";
+import api from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,49 +21,124 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Search, Filter, Eye, Edit, Trash2 } from "lucide-react"
 
-export function RequestSlips() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+interface RequestSlipItemForm {
+  product_id: number;
+  quantity: number;
+  purpose?: string;
+  notes?: string;
+  name?: string; // for display only
+}
 
-  const requestSlips = [
-    {
-      id: "REQ-001",
-      requester: "John Doe",
-      department: "IT",
-      purpose: "Office Equipment",
-      status: "pending",
-      date: "2024-01-15",
-      items: 3,
-    },
-    {
-      id: "REQ-002",
-      requester: "Jane Smith",
-      department: "HR",
-      purpose: "Stationery Supplies",
-      status: "approved",
-      date: "2024-01-14",
-      items: 5,
-    },
-    {
-      id: "REQ-003",
-      requester: "Mike Johnson",
-      department: "Finance",
-      purpose: "Computer Hardware",
-      status: "rejected",
-      date: "2024-01-13",
-      items: 2,
-    },
-    {
-      id: "REQ-004",
-      requester: "Sarah Wilson",
-      department: "Marketing",
-      purpose: "Promotional Materials",
-      status: "pending",
-      date: "2024-01-12",
-      items: 7,
-    },
-  ]
+interface RequestSlipForm {
+  slip_number: string;
+  request_date: string;
+  requested_by: string;
+  department: string;
+  purpose: string;
+  status: string;
+  approved_by?: string;
+  approved_date?: string;
+  notes?: string;
+  items: RequestSlipItemForm[];
+}
+
+export function RequestSlips() {
+  const [requestSlips, setRequestSlips] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [products, setProducts] = useState<any[]>([]);
+  const [form, setForm] = useState<RequestSlipForm>({
+    slip_number: "",
+    request_date: new Date().toISOString().slice(0, 10),
+    requested_by: "John Doe",
+    department: "IT",
+    purpose: "",
+    status: "pending",
+    items: [],
+  });
+  const [itemDraft, setItemDraft] = useState<RequestSlipItemForm>({ product_id: 0, quantity: 1, purpose: "", notes: "" });
+  const [creating, setCreating] = useState(false);
+  const [formError, setFormError] = useState("");
+
+  useEffect(() => {
+    fetchRequestSlips();
+    fetchProducts();
+  }, []);
+
+  async function fetchRequestSlips() {
+    setLoading(true);
+    try {
+      const res = await api.get("/request-slips");
+      setRequestSlips(res.data.data || []);
+    } catch (e: any) {
+      setError(e?.response?.data?.message || "Failed to fetch request slips");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function fetchProducts() {
+    try {
+      // You may have a dedicated endpoint for products, or use /products
+      const res = await api.get("/products");
+      setProducts(res.data.data || []);
+    } catch {
+      setProducts([]);
+    }
+  }
+
+  function handleAddItem() {
+    if (!itemDraft.product_id || !itemDraft.quantity) return;
+    const product = products.find(p => p.id === itemDraft.product_id);
+    setForm(f => ({
+      ...f,
+      items: [
+        ...f.items,
+        { ...itemDraft, name: product?.name || "" },
+      ],
+    }));
+    setItemDraft({ product_id: 0, quantity: 1, purpose: "", notes: "" });
+  }
+
+  function handleRemoveItem(idx: number) {
+    setForm(f => ({ ...f, items: f.items.filter((_, i) => i !== idx) }));
+  }
+
+  async function handleCreateSlip() {
+    setCreating(true);
+    setFormError("");
+    // Basic validation
+    if (!form.slip_number || !form.requested_by || !form.department || !form.purpose || form.items.length === 0) {
+      setFormError("Please fill all required fields and add at least one item.");
+      setCreating(false);
+      return;
+    }
+    try {
+      const payload = {
+        ...form,
+        items: form.items.map(({ name, ...rest }) => rest), // remove display-only fields
+      };
+      await api.post("/request-slips", payload);
+      setIsCreateDialogOpen(false);
+      setForm({
+        slip_number: "",
+        request_date: new Date().toISOString().slice(0, 10),
+        requested_by: "John Doe",
+        department: "IT",
+        purpose: "",
+        status: "pending",
+        items: [],
+      });
+      fetchRequestSlips();
+    } catch (e: any) {
+      setFormError(e?.response?.data?.message || "Failed to create request slip");
+    } finally {
+      setCreating(false);
+    }
+  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -91,13 +167,13 @@ export function RequestSlips() {
 
   const filteredRequests = requestSlips.filter((request) => {
     const matchesSearch =
-      request.requester.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.purpose.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.id.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === "all" || request.status === statusFilter
-    return matchesSearch && matchesStatus
-  })
+      request.requested_by?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.purpose?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.slip_number?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "all" || request.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="space-y-6">

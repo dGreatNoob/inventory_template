@@ -13,6 +13,15 @@ return new class extends Migration
     {
         Schema::create('request_slips', function (Blueprint $table) {
             $table->id();
+            $table->string('slip_number', 50)->unique();
+            $table->date('request_date');
+            $table->string('requested_by', 100);
+            $table->string('department', 100);
+            $table->string('purpose');
+            $table->enum('status', ['pending', 'approved', 'rejected', 'issued'])->default('pending');
+            $table->string('approved_by', 100)->nullable();
+            $table->date('approved_date')->nullable();
+            $table->text('notes')->nullable();
             $table->timestamps();
         });
     }
