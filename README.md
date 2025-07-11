@@ -1,5 +1,5 @@
 # Inventory Management System
-
+dev
 A comprehensive inventory management solution built with Next.js 14, TypeScript, and Tailwind CSS.
 
 ## Features
