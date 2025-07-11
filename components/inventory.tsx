@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,77 +20,53 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Search, Filter, Eye, Edit, Package, AlertTriangle, CheckCircle, XCircle, Calendar } from "lucide-react"
+import api from "@/lib/api"
+
+// Add a Product type for better type safety
+interface Product {
+  id: number;
+  name: string;
+  sku: string;
+  category: string | { name: string };
+  stock: number;
+  unit: string;
+  reorderLevel: number;
+  status: string;
+  supplier?: string;
+  lastUpdated?: string;
+  priceTiers: { quantity: string; price: number }[];
+  batches: { batch: string; quantity: number; expiry?: string | null; received: string }[];
+}
 
 export function Inventory() {
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [selectedProduct, setSelectedProduct] = useState(null)
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
 
-  const products = [
-    {
-      id: 1,
-      name: "Office Chair - Ergonomic",
-      sku: "OFC-001",
-      category: "Furniture",
-      stock: 15,
-      unit: "pcs",
-      reorderLevel: 10,
-      status: "in-stock",
-      supplier: "Furniture World",
-      lastUpdated: "2024-01-15",
-      priceTiers: [
-        { quantity: "1-10", price: 150.0 },
-        { quantity: "11-50", price: 140.0 },
-        { quantity: "51+", price: 130.0 },
-      ],
-      batches: [
-        { batch: "OFC-001-B001", quantity: 8, expiry: null, received: "2024-01-10" },
-        { batch: "OFC-001-B002", quantity: 7, expiry: null, received: "2024-01-15" },
-      ],
-    },
-    {
-      id: 2,
-      name: "Hand Sanitizer",
-      sku: "HS-004",
-      category: "Health & Safety",
-      stock: 45,
-      unit: "bottles",
-      reorderLevel: 20,
-      status: "in-stock",
-      supplier: "Supply Chain Co.",
-      lastUpdated: "2024-01-14",
-      priceTiers: [
-        { quantity: "1-50", price: 8.5 },
-        { quantity: "51-100", price: 7.75 },
-        { quantity: "101+", price: 7.0 },
-      ],
-      batches: [
-        { batch: "HS-004-B001", quantity: 20, expiry: "2024-12-31", received: "2024-01-05" },
-        { batch: "HS-004-B002", quantity: 15, expiry: "2025-06-30", received: "2024-01-10" },
-        { batch: "HS-004-B003", quantity: 10, expiry: "2024-02-15", received: "2024-01-14" },
-      ],
-    },
-    {
-      id: 3,
-      name: "Desk Lamp - LED",
-      sku: "DL-002",
-      category: "Electronics",
-      stock: 8,
-      unit: "pcs",
-      reorderLevel: 15,
-      status: "low",
-      supplier: "Tech Solutions Ltd.",
-      lastUpdated: "2024-01-13",
-      priceTiers: [
-        { quantity: "1-20", price: 45.0 },
-        { quantity: "21-50", price: 42.0 },
-        { quantity: "51+", price: 38.0 },
-      ],
-      batches: [{ batch: "DL-002-B001", quantity: 8, expiry: null, received: "2024-01-08" }],
-    },
-  ]
+  useEffect(() => {
+    setLoading(true)
+    api.get("/products")
+      .then(res => {
+        const safeProducts = (res.data.data || []).map((p: any) => ({
+          ...p,
+          priceTiers: Array.isArray(p.priceTiers) ? p.priceTiers : [],
+          batches: Array.isArray(p.batches) ? p.batches : [],
+          category: typeof p.category === 'string' ? p.category : (p.category?.name || 'N/A'),
+        }))
+        setProducts(safeProducts)
+        setError(null)
+      })
+      .catch(err => {
+        setError(err.response?.data?.message || err.message)
+        setProducts([])
+      })
+      .finally(() => setLoading(false))
+  }, [])
 
   const getStatusBadge = (status: string, stock: number, reorderLevel: number) => {
     if (stock === 0) {
@@ -146,7 +122,7 @@ export function Inventory() {
     return matchesSearch && matchesCategory && matchesStatus
   })
 
-  const ProductDetailsModal = ({ product, isOpen, onClose }) => {
+  const ProductDetailsModal = ({ product, isOpen, onClose }: { product: Product | null; isOpen: boolean; onClose: () => void }) => {
     if (!product) return null
 
     const stockHistory = [
@@ -267,7 +243,7 @@ export function Inventory() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {product.priceTiers.map((tier, index) => (
+                      {product.priceTiers.map((tier: { quantity: string; price: number }, index: number) => (
                         <TableRow key={index}>
                           <TableCell className="font-medium">{tier.quantity}</TableCell>
                           <TableCell>${tier.price.toFixed(2)}</TableCell>
@@ -310,7 +286,7 @@ export function Inventory() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {product.batches.map((batch, index) => (
+                      {product.batches.map((batch: { batch: string; quantity: number; expiry?: string | null; received: string }, index: number) => (
                         <TableRow key={index}>
                           <TableCell className="font-medium">{batch.batch}</TableCell>
                           <TableCell>
@@ -547,67 +523,72 @@ export function Inventory() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Product Name</TableHead>
-                <TableHead>SKU</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Stock Qty</TableHead>
-                <TableHead>UOM</TableHead>
-                <TableHead>Price Range</TableHead>
-                <TableHead>Batches</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredProducts.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{product.sku}</TableCell>
-                  <TableCell>{product.category}</TableCell>
-                  <TableCell className="font-medium">{product.stock}</TableCell>
-                  <TableCell>{product.unit}</TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <div>
-                        ${product.priceTiers[product.priceTiers.length - 1].price.toFixed(2)} - $
-                        {product.priceTiers[0].price.toFixed(2)}
-                      </div>
-                      <div className="text-muted-foreground">{product.priceTiers.length} tiers</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-sm font-medium">{product.batches.length} batches</span>
-                      {product.batches.some((batch) => batch.expiry) && (
-                        <div className="text-xs">
-                          {
-                            product.batches
-                              .filter((batch) => batch.expiry)
-                              .map((batch) => getExpiryBadge(batch.expiry))
-                              .filter(Boolean)[0]
-                          }
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>{getStatusBadge(product.status, product.stock, product.reorderLevel)}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => setSelectedProduct(product)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          {loading && <p>Loading inventory...</p>}
+          {error && <p style={{ color: "red" }}>{error}</p>}
+          {!loading && !error && (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Product Name</TableHead>
+                  <TableHead>SKU</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Stock Qty</TableHead>
+                  <TableHead>UOM</TableHead>
+                  <TableHead>Price Range</TableHead>
+                  <TableHead>Batches</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredProducts.map((product) => (
+                  <TableRow key={product.id}>
+                    <TableCell className="font-medium">{product.name}</TableCell>
+                    <TableCell>{product.sku}</TableCell>
+                    <TableCell>{typeof product.category === 'string' ? product.category : product.category?.name || 'N/A'}</TableCell>
+                    <TableCell className="font-medium">{product.stock}</TableCell>
+                    <TableCell>{product.unit}</TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        <div>
+                          {product.priceTiers.length > 0
+                            ? `$${product.priceTiers[product.priceTiers.length - 1].price.toFixed(2)} - $${product.priceTiers[0].price.toFixed(2)}`
+                            : 'N/A'}
+                        </div>
+                        <div className="text-muted-foreground">{(product.priceTiers || []).length} tiers</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm font-medium">{(product.batches || []).length} batches</span>
+                        {product.batches.some((batch) => batch.expiry) && (
+                          <div className="text-xs">
+                            {
+                              product.batches
+                                .filter((batch) => batch.expiry)
+                                .map((batch) => getExpiryBadge(batch.expiry ?? null))
+                                .filter(Boolean)[0]
+                            }
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>{getStatusBadge(product.status, product.stock, product.reorderLevel)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedProduct(product)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
